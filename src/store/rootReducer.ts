@@ -1,8 +1,9 @@
 import { combineReducers } from '@reduxjs/toolkit';
 import { persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
-import { alphaVantageApi } from './api/alphaVantageApi';
 import { customApi } from './api/customApi';
+import { indianApi } from './api/indianApi';
+import { coinbaseApi } from './api/coinbaseApi';
 import widgetsReducer from './slices/widgetsSlice';
 import themeReducer from './slices/themeSlice';
 
@@ -11,12 +12,13 @@ const persistConfig = {
   key: 'FinGet',
   storage,
   whitelist: ['widgets', 'theme'], // Only persist these slices
-  blacklist: ['alphaVantageApi', 'customApi'], // Don't persist API cache
+  blacklist: ['customApi', 'indianApi', 'coinbaseApi'], // Don't persist API cache
 };
 
 const rootReducer = combineReducers({
-  [alphaVantageApi.reducerPath]: alphaVantageApi.reducer,
   [customApi.reducerPath]: customApi.reducer,
+  [indianApi.reducerPath]: indianApi.reducer,
+  [coinbaseApi.reducerPath]: coinbaseApi.reducer,
   widgets: widgetsReducer,
   theme: themeReducer,
 });

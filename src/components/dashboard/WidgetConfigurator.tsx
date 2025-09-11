@@ -11,7 +11,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +18,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronDown, Eye, EyeOff, Copy, AlertCircle } from 'lucide-react';
 import { Widget, WidgetConfig } from '@/store/slices/widgetsSlice';
 import { useAppDispatch } from '@/store';
-import { updateWidget, updateWidgetConfig } from '@/store/slices/widgetsSlice';
+import { updateWidget } from '@/store/slices/widgetsSlice';
 import { useLazyGetCustomDataQuery } from '@/store/api/customApi';
 import { JsonExplorer } from './JsonExplorer';
 
@@ -79,19 +78,20 @@ export function WidgetConfigurator({ widget, open, onOpenChange }: WidgetConfigu
           </SheetDescription>
         </SheetHeader>
 
-        <Tabs defaultValue="general" className="mt-6">
+        <Tabs defaultValue="general" className="mt-6 m-3">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="data">Data Source</TabsTrigger>
             <TabsTrigger value="mapping">Field Mapping</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="general" className="space-y-4">
+          <TabsContent value="general" className="space-y-6 m-3">
             <div>
-              <Label htmlFor="widget-title">Widget Title</Label>
+              <Label htmlFor="widget-title ">Widget Title</Label>
               <Input
                 id="widget-title"
                 value={localTitle}
+                className='mt-3'
                 onChange={(e) => setLocalTitle(e.target.value)}
                 placeholder="Enter widget title"
               />
@@ -108,28 +108,11 @@ export function WidgetConfigurator({ widget, open, onOpenChange }: WidgetConfigu
               />
             </div>
 
-            {widget.type === 'candle' && (
-              <div>
-                <Label htmlFor="chart-type">Chart Type</Label>
-                <Select 
-                  value={localConfig.chartType} 
-                  onValueChange={(value) => handleConfigChange({ chartType: value as 'candlestick' | 'line' })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="candlestick">Candlestick</SelectItem>
-                    <SelectItem value="line">Line Chart</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
           </TabsContent>
 
-          <TabsContent value="data" className="space-y-4">
+          <TabsContent value="data" className="space-y-4  m-3">
             <div>
-              <Label htmlFor="api-source">Data Source</Label>
+              <Label htmlFor="api-source"  className='mb-2'>Data Source</Label>
               <Select 
                 value={localConfig.apiSource} 
                 onValueChange={(value) => handleConfigChange({ apiSource: value as WidgetConfig['apiSource'] })}
@@ -139,8 +122,8 @@ export function WidgetConfigurator({ widget, open, onOpenChange }: WidgetConfigu
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="custom">Custom API</SelectItem>
-                  <SelectItem value="alphavantage">AlphaVantage</SelectItem>
-                  <SelectItem value="finnhub">Finnhub</SelectItem>
+                  <SelectItem value="indianapi">IndianAPI</SelectItem>
+                  <SelectItem value="coinbase">Coinbase</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -182,38 +165,19 @@ export function WidgetConfigurator({ widget, open, onOpenChange }: WidgetConfigu
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="symbol">Symbol</Label>
-                  <Input
-                    id="symbol"
-                    value={localConfig.symbol || ''}
-                    onChange={(e) => handleConfigChange({ symbol: e.target.value.toUpperCase() })}
-                    placeholder="e.g., AAPL, TSLA"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="interval">Interval</Label>
-                  <Select 
-                    value={localConfig.interval} 
-                    onValueChange={(value) => handleConfigChange({ interval: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1min">1 Minute</SelectItem>
-                      <SelectItem value="5min">5 Minutes</SelectItem>
-                      <SelectItem value="15min">15 Minutes</SelectItem>
-                      <SelectItem value="30min">30 Minutes</SelectItem>
-                      <SelectItem value="60min">1 Hour</SelectItem>
-                      <SelectItem value="daily">Daily</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            ) : localConfig.apiSource === 'indianapi' ? (
+              <div className="p-4 border border-muted rounded-md bg-muted/50">
+                <p className="text-sm text-muted-foreground">
+                  🇮🇳 IndianAPI settings are configured automatically. Popular Indian stocks will be displayed in the Stock Table widget.
+                </p>
               </div>
-            )}
+            ) : localConfig.apiSource === 'coinbase' ? (
+              <div className="p-4 border border-muted rounded-md bg-muted/50">
+                <p className="text-sm text-muted-foreground">
+                  💰 Coinbase settings are configured automatically. Popular cryptocurrency pairs will be displayed in the Crypto Table widget.
+                </p>
+              </div>
+            ) : null}
 
             {apiError && (
               <div className="flex items-start space-x-2 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
@@ -221,14 +185,14 @@ export function WidgetConfigurator({ widget, open, onOpenChange }: WidgetConfigu
                 <div className="flex-1">
                   <p className="text-sm font-medium text-destructive">API Error</p>
                   <p className="text-xs text-destructive/80">
-                    {apiError && 'data' in apiError ? (apiError.data as any)?.error || 'Unknown error' : 'Network error'}
+                    {apiError && 'data' in apiError ? (apiError.data as { error?: string })?.error || 'Unknown error' : 'Network error'}
                   </p>
                 </div>
               </div>
             )}
           </TabsContent>
 
-          <TabsContent value="mapping" className="space-y-4">
+          <TabsContent value="mapping" className="space-y-4  m-3">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-medium">Field Mapping</h4>

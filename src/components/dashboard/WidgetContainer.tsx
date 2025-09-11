@@ -11,13 +11,15 @@ import {
   X, 
   RefreshCw, 
   AlertCircle,
-  TrendingUp 
+  TrendingUp,
+  Bitcoin 
 } from 'lucide-react';
 import { Widget } from '@/store/slices/widgetsSlice';
 import { useAppDispatch } from '@/store';
 import { removeWidget, selectWidget } from '@/store/slices/widgetsSlice';
 import { WidgetConfigurator } from './WidgetConfigurator';
 import { StockTable } from '@/components/widgets/StockTable/StockTable';
+import { CryptoTable } from '@/components/widgets/CryptoTable/CryptoTable';
 import { CustomTable } from '@/components/widgets/CustomTable/CustomTable';
 
 interface WidgetContainerProps {
@@ -52,6 +54,8 @@ export function WidgetContainer({ widget, onClick }: WidgetContainerProps) {
     switch (widget.type) {
       case 'stock-table':
         return <StockTable widget={widget} />;
+      case 'crypto-table':
+        return <CryptoTable widget={widget} />;
       case 'custom-table':
         return <CustomTable widget={widget} />;
       default:
@@ -68,6 +72,8 @@ export function WidgetContainer({ widget, onClick }: WidgetContainerProps) {
     switch (widget.type) {
       case 'stock-table':
         return <TrendingUp className="h-4 w-4" />;
+      case 'crypto-table':
+        return <Bitcoin className="h-4 w-4" />;
       case 'custom-table':
         return <div className="h-4 w-4 border border-current" />;
       default:

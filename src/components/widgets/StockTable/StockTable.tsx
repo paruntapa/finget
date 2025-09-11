@@ -2,11 +2,9 @@
 
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -16,7 +14,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { 
-  AlertCircle, 
   Search, 
   TrendingUp, 
   TrendingDown, 
@@ -27,54 +24,51 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { Widget } from '@/store/slices/widgetsSlice';
-import { useGetIntradayQuery } from '@/store/api/alphaVantageApi';
-import { parseIntradayToStockQuotes, StockQuote } from '@/lib/adapters/alphavantage';
-import { useAppDispatch } from '@/store';
-import { updateWidget } from '@/store/slices/widgetsSlice';
+import { useGetMultipleStockPricesQuery } from '@/store/api/indianApi';
 
 interface StockTableProps {
   widget: Widget;
 }
 
-// Predefined stock lists by region (using symbols that work with demo API)
-const REGION_STOCKS = {
-  USA: ['IBM', 'AAPL', 'MSFT', 'AMZN', 'TSLA'],
-  India: ['RELIANCE.BSE', 'TCS.BSE', 'HDFCBANK.BSE', 'INFY.BSE', 'WIPRO.BSE'],
-  UK: ['TSCO.LON'],
-  Global: ['IBM', 'TSCO.LON', 'SHOP.TRT', 'GPV.TRV', 'MBG.DEX'],
-};
+// Popular Indian stocks (compatible with IndianAPI)
+const INDIAN_STOCKS = [
+  'RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 
+  'HDFC', 'SBIN', 'BHARTIARTL', 'ITC', 'WIPRO',
+  'LT', 'HCLTECH', 'ASIANPAINT', 'MARUTI', 'BAJFINANCE'
+];
 
 export function StockTable({ widget }: StockTableProps) {
   const router = useRouter();
-  const dispatch = useAppDispatch();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const itemsPerPage = 10;
-
-  // Get region and stock symbols from widget config
-  const selectedRegion = (widget.config.mapping.region || 'Global') as 'USA' | 'India' | 'UK' | 'Global';
   const stockSymbols = useMemo(() => {
-    const configuredStocks = widget.config.mapping.symbols;
+    const configuredStocks = widget.config.symbols;
     if (configuredStocks && typeof configuredStocks === 'string') {
       return configuredStocks.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
     }
-    return REGION_STOCKS[selectedRegion];
-  }, [widget.config.mapping.symbols, selectedRegion]);
+    return INDIAN_STOCKS;
+  }, [widget.config.symbols]);
 
-  // Generate demo stock quotes (simplified for demo)
-  // TODO: Replace polling with WebSockets for real-time updates
-  const stockQuotes = useMemo(() => {
-    return stockSymbols.map(symbol => ({
-      symbol,
-      price: 100 + Math.random() * 50,
-      change: (Math.random() - 0.5) * 10,
-      changePercent: (Math.random() - 0.5) * 5,
-      volume: Math.floor(Math.random() * 1000000),
-      lastUpdated: new Date().toISOString(),
-    }));
-  }, [stockSymbols]);
+  // Fetch real stock data from IndianAPI
+  const { 
+    data: stockQuotes = [], 
+    error, 
+    isLoading, 
+    refetch 
+  } = useGetMultipleStockPricesQuery(
+    { symbols: stockSymbols },
+    { 
+      pollingInterval: widget.config.refreshInterval * 1000,
+      skip: stockSymbols.length === 0 
+    }
+  );
+
+  // Debug logging to see what data we're getting
+  console.log('StockTable - stockQuotes data:', stockQuotes);
+  console.log('StockTable - error:', error);
+  console.log('StockTable - isLoading:', isLoading);
 
   // Filter stocks based on search term
   const filteredStocks = useMemo(() => {
@@ -94,37 +88,28 @@ export function StockTable({ widget }: StockTableProps) {
   }, [filteredStocks, currentPage, itemsPerPage]);
 
   const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1000);
+    refetch();
   };
 
   const handleRowClick = (symbol: string) => {
     router.push(`/stock/${symbol}`);
   };
 
-  const handleRegionChange = (newRegion: string) => {
-    const regionKey = newRegion as 'USA' | 'India' | 'UK' | 'Global';
-    const newSymbols = REGION_STOCKS[regionKey];
-    
-    dispatch(updateWidget({
-      id: widget.id,
-      updates: {
-        config: {
-          ...widget.config,
-          mapping: {
-            ...widget.config.mapping,
-            region: regionKey,
-            symbols: newSymbols.join(','),
-          },
-        },
-      },
-    }));
-  };
+  // No region change needed - IndianAPI only supports Indian stocks
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
+    // Debug logging to see what price values we're getting
+    console.log('formatPrice called with:', price, typeof price);
+    
+    // Ensure price is a valid number
+    if (price === undefined || price === null || isNaN(price)) {
+      console.warn('Invalid price value:', price);
+      return '₹0.00';
+    }
+    
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       minimumFractionDigits: 2,
     }).format(price);
   };
@@ -165,21 +150,13 @@ export function StockTable({ widget }: StockTableProps) {
 
   return (
     <div className="space-y-3">
-      {/* Region Selector and Controls */}
+      {/* Indian Stock Market Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Globe className="h-4 w-4 text-muted-foreground" />
-          <Select value={selectedRegion} onValueChange={handleRegionChange}>
-            <SelectTrigger className="w-24 h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="USA">🇺🇸 USA</SelectItem>
-              <SelectItem value="India">🇮🇳 India</SelectItem>
-              <SelectItem value="UK">🇬🇧 UK</SelectItem>
-              <SelectItem value="Global">🌍 Global</SelectItem>
-            </SelectContent>
-          </Select>
+          <Badge variant="secondary" className="text-xs">
+            🇮🇳 India
+          </Badge>
           <Badge variant="outline" className="text-xs">
             {stockSymbols.length} stocks
           </Badge>
@@ -189,10 +166,10 @@ export function StockTable({ widget }: StockTableProps) {
           size="sm"
           variant="outline"
           onClick={handleRefresh}
-          disabled={isRefreshing}
+          disabled={isLoading}
           className="h-8 px-2"
         >
-          <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
         </Button>
       </div>
 
@@ -223,7 +200,20 @@ export function StockTable({ widget }: StockTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedStocks.length === 0 ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-4 text-muted-foreground text-xs">
+                  <RefreshCw className="h-4 w-4 animate-spin inline mr-2" />
+                  Loading stock data...
+                </TableCell>
+              </TableRow>
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-4 text-destructive text-xs">
+                  Failed to load stock data. Please try refreshing.
+                </TableCell>
+              </TableRow>
+            ) : paginatedStocks.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-4 text-muted-foreground text-xs">
                   {searchTerm ? 'No stocks match your search' : 'No stock data available'}

@@ -2,20 +2,21 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 export interface WidgetMapping {
   [key: string]: string; // Maps widget field to JSON path
-  symbols?: string; // Comma-separated list of stock symbols for stock table
-  region?: 'USA' | 'India' | 'UK' | 'Global'; // Region selector for stock table
 }
 
 export interface WidgetConfig {
-  apiSource: 'alphavantage' | 'custom';
+  apiSource: 'indianapi' | 'coinbase' | 'custom';
   apiUrl?: string; // For custom API widgets
   refreshInterval: number; // seconds
   mapping: WidgetMapping;
+  symbols?: string; // Comma-separated list of stock symbols for stock table
+  region?: 'India'; // Only India region supported with IndianAPI
+  cryptoPairs?: string; // Comma-separated list of crypto pairs for crypto table
 }
 
 export interface Widget {
   id: string;
-  type: 'stock-table' | 'custom-table';
+  type: 'stock-table' | 'crypto-table' | 'custom-table';
   title: string;
   config: WidgetConfig;
   x: number;

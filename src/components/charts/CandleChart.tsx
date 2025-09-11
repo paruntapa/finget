@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi, CandlestickSeries } from 'lightweight-charts';
-import { CandleData } from '@/lib/adapters/alphavantage';
+import { createChart, IChartApi, CandlestickSeries, Time } from 'lightweight-charts';
+import { CandleData } from '@/lib/adapters/coinbaseAdapter';
 
 // Theme-based colors
 const getChartTheme = () => {
@@ -28,7 +28,7 @@ interface CandleChartProps {
 export function CandleChart({ data, height = 400, className = '' }: CandleChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<any>(null);
+  const seriesRef = useRef<ReturnType<IChartApi['addSeries']> | null>(null);
 
   // Initialize chart
   useEffect(() => {
@@ -109,14 +109,30 @@ export function CandleChart({ data, height = 400, className = '' }: CandleChartP
     if (!seriesRef.current || !data.length) return;
 
     try {
+      console.log('Chart data received:', data.slice(0, 3)); // Debug: log first 3 items
+      
       // Format data for lightweight-charts
-      const formattedData = data.map(item => ({
-        time: item.time,
-        open: item.open,
-        high: item.high,
-        low: item.low,
-        close: item.close,
-      }));
+      const formattedData = data.map(item => {
+        let timeValue;
+        if (typeof item.time === 'number') {
+          // Convert UNIX timestamp to YYYY-MM-DD format for daily data
+          // or use timestamp directly for intraday (lightweight-charts accepts both)
+          timeValue = item.time;
+        } else {
+          // If it's already a string, use it as is
+          timeValue = item.time;
+        }
+        
+        return {
+          time: timeValue as Time, // Convert to lightweight-charts Time type
+          open: item.open,
+          high: item.high,
+          low: item.low,
+          close: item.close,
+        };
+      });
+
+      console.log('Formatted chart data:', formattedData.slice(0, 3)); // Debug: log formatted data
 
       // Set data and fit content
       seriesRef.current.setData(formattedData);
@@ -126,6 +142,7 @@ export function CandleChart({ data, height = 400, className = '' }: CandleChartP
       }
     } catch (error) {
       console.error('Chart rendering error:', error);
+      console.error('Data that caused error:', data);
     }
   }, [data]);
 

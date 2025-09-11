@@ -81,7 +81,7 @@ export function CustomTable({ widget }: CustomTableProps) {
     await refetch();
   };
 
-  const formatCellValue = (value: any, columnName: string) => {
+  const formatCellValue = (value: unknown, columnName: string) => {
     if (value === null || value === undefined) return '—';
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';
     
@@ -117,18 +117,18 @@ export function CustomTable({ widget }: CustomTableProps) {
     // Currency type formatting
     if (columnName.toLowerCase() === 'type') {
       const typeColors = {
-        'Fiat': 'bg-blue-100 text-blue-800',
-        'Stablecoin': 'bg-green-100 text-green-800', 
-        'Major Crypto': 'bg-purple-100 text-purple-800',
-        'Crypto': 'bg-orange-100 text-orange-800',
-        'Fiat/Other': 'bg-gray-100 text-gray-800',
+        'Fiat': 'text-blue-400',
+        'Stablecoin': 'text-green-400', 
+        'Major Crypto': 'text-red-400',
+        'Crypto': 'text-orange-400',
+        'Fiat/Other': 'text-gray-400',
       };
       
       const colorClass = typeColors[value as keyof typeof typeColors] || 'bg-gray-100 text-gray-800';
       
       return (
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
-          {value}
+          {String(value)}
         </span>
       );
     }
@@ -168,7 +168,7 @@ export function CustomTable({ widget }: CustomTableProps) {
         <AlertCircle className="h-8 w-8 text-destructive mb-2" />
         <p className="text-sm font-medium text-destructive mb-1">Failed to load data</p>
         <p className="text-xs text-muted-foreground mb-3">
-          {error && 'data' in error ? (error.data as any)?.error || 'Network error' : 'Unknown error'}
+          {error && 'data' in error ? (error.data as { error?: string })?.error || 'Network error' : 'Unknown error'}
         </p>
         <Button size="sm" onClick={handleRefresh}>
           <RefreshCw className="h-4 w-4 mr-2" />

@@ -4,22 +4,23 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronRight, ChevronDown, Plus } from 'lucide-react';
 import { exploreJSON, getValuePreview, suggestMappings, JsonPath } from '@/lib/jsonMapper';
 import { WidgetMapping } from '@/store/slices/widgetsSlice';
 
 interface JsonExplorerProps {
-  data: any;
+  data: unknown;
   onFieldSelect: (field: string, path: string) => void;
   currentMapping: WidgetMapping;
-  widgetType: 'stock-table' | 'custom-table';
+  widgetType: 'stock-table' | 'crypto-table' | 'custom-table';
 }
 
 const getWidgetFields = (widgetType: string) => {
   switch (widgetType) {
     case 'stock-table':
       return ['symbols', 'region'];
+    case 'crypto-table':
+      return ['symbol', 'price', 'change', 'changePercent', 'volume', 'lastUpdated'];
     case 'custom-table':
       return ['apiUrl'];
     default:
@@ -80,7 +81,7 @@ export function JsonExplorer({ data, onFieldSelect, currentMapping, widgetType }
                 {path || 'root'}
               </code>
               <Badge variant="outline" className="text-xs">
-                {isArray ? `array[${value.split('(')[1]?.split(')')[0] || ''}]` : type}
+                {isArray ? `array[${String(value).split('(')[1]?.split(')')[0] || ''}]` : type}
               </Badge>
               {isLeaf && (
                 <span className="text-xs text-muted-foreground truncate">

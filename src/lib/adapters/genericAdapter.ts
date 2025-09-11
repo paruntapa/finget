@@ -1,4 +1,4 @@
-import { CandleData } from './alphavantage';
+import { CandleData } from './indianApiAdapter';
 
 export interface GenericAdapterConfig {
   timeField?: string;
@@ -11,7 +11,7 @@ export interface GenericAdapterConfig {
 }
 
 export function parseGenericResponse(
-  response: any,
+  response: unknown,
   config: GenericAdapterConfig = {}
 ): CandleData[] {
   const {
@@ -25,11 +25,15 @@ export function parseGenericResponse(
   } = config;
 
   // Navigate to the data array if path is specified
-  let data = response;
+  let data: unknown = response;
   if (dataPath) {
     const pathParts = dataPath.split('.');
     for (const part of pathParts) {
-      data = data?.[part];
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        data = (data as Record<string, unknown>)[part];
+      } else {
+        break;
+      }
     }
   }
 
@@ -37,10 +41,13 @@ export function parseGenericResponse(
   if (!Array.isArray(data)) {
     // Look for common array field names
     const arrayFields = ['data', 'results', 'quotes', 'candles', 'ohlc', 'timeseries'];
-    for (const field of arrayFields) {
-      if (Array.isArray(response[field])) {
-        data = response[field];
-        break;
+    if (response && typeof response === 'object' && !Array.isArray(response)) {
+      const responseObj = response as Record<string, unknown>;
+      for (const field of arrayFields) {
+        if (Array.isArray(responseObj[field])) {
+          data = responseObj[field];
+          break;
+        }
       }
     }
   }
@@ -50,24 +57,27 @@ export function parseGenericResponse(
     return [];
   }
 
-  return data.map((item: any) => ({
-    time: item[timeField] || item.date || item.timestamp,
-    open: parseFloat(item[openField]) || 0,
-    high: parseFloat(item[highField]) || 0,
-    low: parseFloat(item[lowField]) || 0,
-    close: parseFloat(item[closeField]) || 0,
-    volume: item[volumeField] ? parseFloat(item[volumeField]) : undefined,
-  })).filter(item => item.time); // Filter out items without time
+  return data.map((item: Record<string, unknown>) => ({
+    time: String(item[timeField] || item.date || item.timestamp || ''),
+    open: parseFloat(String(item[openField] || '0')) || 0,
+    high: parseFloat(String(item[highField] || '0')) || 0,
+    low: parseFloat(String(item[lowField] || '0')) || 0,
+    close: parseFloat(String(item[closeField] || '0')) || 0,
+    volume: item[volumeField] ? parseFloat(String(item[volumeField])) : 0,
+  })).filter(item => item.time && item.time !== ''); // Filter out items without time
 }
 
 // Auto-detect field mappings from sample data
-export function detectFieldMappings(sampleData: any): GenericAdapterConfig {
+export function detectFieldMappings(sampleData: unknown): GenericAdapterConfig {
   if (!Array.isArray(sampleData) || sampleData.length === 0) {
     return {};
   }
 
   const firstItem = sampleData[0];
-  const fields = Object.keys(firstItem);
+  if (!firstItem || typeof firstItem !== 'object' || Array.isArray(firstItem)) {
+    return {};
+  }
+  const fields = Object.keys(firstItem as Record<string, unknown>);
   
   const mapping: GenericAdapterConfig = {};
 

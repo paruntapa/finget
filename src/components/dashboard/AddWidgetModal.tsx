@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 // Removed unused Select imports
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, Database } from 'lucide-react';
+import { TrendingUp, Bitcoin, Database } from 'lucide-react';
 import { useAppDispatch } from '@/store';
 import { addWidget, Widget, WidgetConfig } from '@/store/slices/widgetsSlice';
 
@@ -27,8 +27,15 @@ const widgetTypes = [
   {
     type: 'stock-table' as const,
     name: 'Stock Table',
-    description: 'Real-time stock quotes with region selector (USA/India)',
+    description: 'Real-time Indian stock quotes from NSE/BSE',
     icon: TrendingUp,
+    defaultSize: { w: 8, h: 6 },
+  },
+  {
+    type: 'crypto-table' as const,
+    name: 'Crypto Table',
+    description: 'Real-time cryptocurrency prices from Coinbase',
+    icon: Bitcoin,
     defaultSize: { w: 8, h: 6 },
   },
   {
@@ -58,16 +65,17 @@ export function AddWidgetModal({ open, onOpenChange }: AddWidgetModalProps) {
 
     // Set up default configuration based on widget type
     const defaultConfig: WidgetConfig = {
-      apiSource: selectedType === 'stock-table' ? 'alphavantage' : 'custom',
+      apiSource: selectedType === 'stock-table' ? 'indianapi' : 
+                 selectedType === 'crypto-table' ? 'coinbase' : 'custom',
       refreshInterval: 60,
       mapping: {},
     };
 
     if (selectedType === 'stock-table') {
-      defaultConfig.mapping = { 
-        symbols: 'IBM,TSCO.LON,SHOP.TRT,GPV.TRV,MBG.DEX',
-        region: 'Global'
-      };
+      defaultConfig.symbols = 'RELIANCE,TCS,HDFCBANK,INFY,ICICIBANK';
+      defaultConfig.region = 'India';
+    } else if (selectedType === 'crypto-table') {
+      defaultConfig.cryptoPairs = 'BTC-USD,ETH-USD,SOL-USD,ADA-USD,DOT-USD';
     } else if (selectedType === 'custom-table') {
       defaultConfig.apiUrl = customUrl || '';
     }

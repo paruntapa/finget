@@ -9,8 +9,9 @@ import {
   PURGE,
   REGISTER,
 } from 'redux-persist';
-import { alphaVantageApi } from './api/alphaVantageApi';
 import { customApi } from './api/customApi';
+import { indianApi } from './api/indianApi';
+import { coinbaseApi } from './api/coinbaseApi';
 import { persistedReducer, RootState } from './rootReducer';
 
 export const store = configureStore({
@@ -21,8 +22,9 @@ export const store = configureStore({
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     }).concat(
-      alphaVantageApi.middleware,
-      customApi.middleware
+      customApi.middleware,
+      indianApi.middleware,
+      coinbaseApi.middleware
     ),
 });
 
@@ -39,4 +41,4 @@ export { useDispatch, useSelector } from 'react-redux';
 import { useDispatch as useReduxDispatch, useSelector as useReduxSelector } from 'react-redux';
 
 export const useAppDispatch = () => useReduxDispatch<AppDispatch>();
-export const useAppSelector = (selector: (state: RootState) => any) => useReduxSelector(selector);
+export const useAppSelector = <TResult>(selector: (state: RootState) => TResult) => useReduxSelector(selector);

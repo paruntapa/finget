@@ -63,7 +63,7 @@ export function DashboardSettings({ open, onOpenChange }: DashboardSettingsProps
         } else {
           alert('Invalid dashboard file format');
         }
-      } catch (error) {
+      } catch {
         alert('Failed to parse dashboard file');
       }
     };

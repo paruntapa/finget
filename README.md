@@ -1,6 +1,6 @@
-# FinGet - Customizable Finance Dashboard
+# FinGet - Indian Stock Market Dashboard
 
-A modern, production-ready finance dashboard built with Next.js, TypeScript, and shadcn/ui. Create custom widgets, visualize financial data with beautiful charts, and manage multiple data sources with ease.
+A modern, production-ready finance dashboard built with Next.js, TypeScript, and shadcn/ui. Track Indian stock market data with real-time quotes, visualize data with beautiful candlestick charts, and create custom widgets for any data source.
 
 ![FinGet Dashboard](https://img.shields.io/badge/React-18+-blue) ![Next.js](https://img.shields.io/badge/Next.js-15+-black) ![TypeScript](https://img.shields.io/badge/TypeScript-5+-blue) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3+-cyan)
 
@@ -18,12 +18,13 @@ A modern, production-ready finance dashboard built with Next.js, TypeScript, and
 - **Multiple Chart Types**: Switch between candlestick and line views
 - **Responsive Design**: Charts adapt to container size automatically
 
-### 🔌 **Streamlined Data Sources**
-- **AlphaVantage Integration**: Professional stock data with intraday, daily, weekly, and monthly intervals
-- **Regional Stock Lists**: Predefined symbols for USA and India markets
+### 🇮🇳 **Indian Stock Market Data**
+- **IndianAPI Integration**: Real-time NSE/BSE stock data with professional-grade API
+- **Popular Indian Stocks**: Pre-configured with top companies (RELIANCE, TCS, HDFC, INFY, etc.)
+- **Multiple Timeframes**: Daily, weekly, and monthly historical candlestick data
+- **INR Currency**: All prices displayed in Indian Rupees with proper locale formatting
 - **Custom API Support**: Connect any REST API endpoint with automatic table conversion
-- **Intelligent Detection**: Auto-identifies stock-like data with upgrade suggestions
-- **Unified API Routes**: Single AlphaVantage endpoint and generic proxy for custom URLs
+- **Smart Caching**: Aggressive caching strategy to minimize API usage (500 req/month)
 
 ### 🔄 **State Management & Persistence**
 - **Redux Toolkit**: Robust state management with RTK Query
@@ -47,7 +48,7 @@ A modern, production-ready finance dashboard built with Next.js, TypeScript, and
 
 ### Prerequisites
 - Node.js 18+ or Bun
-- Optional: API keys for external data sources
+- IndianAPI key from [indianapi.in](https://indianapi.in/) (required)
 
 ### Installation
 

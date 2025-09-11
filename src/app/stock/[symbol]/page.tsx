@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   ArrowLeft, 
@@ -16,11 +16,12 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { 
-  useGetDailyQuery, 
-  useGetWeeklyQuery, 
-  useGetMonthlyQuery,
-} from '@/store/api/alphaVantageApi';
-import { parseTimeSeriesAlphaVantage } from '@/lib/adapters/alphavantage';
+  useGetDailyHistoryQuery, 
+  useGetWeeklyHistoryQuery, 
+  useGetMonthlyHistoryQuery,
+  useGetStockPriceQuery
+} from '@/store/api/indianApi';
+import { generateMockIndianCandleData } from '@/lib/adapters/indianApiAdapter';
 import { CandleChart } from '@/components/charts/CandleChart';
 
 type TimeFrame = 'daily' | 'weekly' | 'monthly';
@@ -28,10 +29,16 @@ type TimeFrame = 'daily' | 'weekly' | 'monthly';
 export default function StockPage() {
   const params = useParams();
   const router = useRouter();
-  const symbol = params.symbol as string;
+  const symbol = params?.symbol as string;
   
   const [selectedTimeFrame, setSelectedTimeFrame] = useState<TimeFrame>('daily');
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
+
+  // Fetch stock price for current info
+  const { data: stockData } = useGetStockPriceQuery(
+    { symbol: symbol || '' }, 
+    { skip: !symbol, pollingInterval: 10000 }
+  );
 
   // Fetch data based on timeframe
   const { 
@@ -39,9 +46,9 @@ export default function StockPage() {
     error: dailyError, 
     isLoading: dailyLoading,
     refetch: refetchDaily
-  } = useGetDailyQuery(
+  } = useGetDailyHistoryQuery(
     { symbol },
-    { skip: selectedTimeFrame !== 'daily' }
+    { skip: selectedTimeFrame !== 'daily', pollingInterval: 10000 }
   );
 
   const { 
@@ -49,9 +56,9 @@ export default function StockPage() {
     error: weeklyError, 
     isLoading: weeklyLoading,
     refetch: refetchWeekly
-  } = useGetWeeklyQuery(
+  } = useGetWeeklyHistoryQuery(
     { symbol },
-    { skip: selectedTimeFrame !== 'weekly' }
+    { skip: selectedTimeFrame !== 'weekly', pollingInterval: 10000 }
   );
 
   const { 
@@ -59,9 +66,9 @@ export default function StockPage() {
     error: monthlyError, 
     isLoading: monthlyLoading,
     refetch: refetchMonthly
-  } = useGetMonthlyQuery(
+  } = useGetMonthlyHistoryQuery(
     { symbol },
-    { skip: selectedTimeFrame !== 'monthly' }
+    { skip: selectedTimeFrame !== 'monthly', pollingInterval: 10000 }
   );
 
   // Determine current data and loading state
@@ -97,16 +104,17 @@ export default function StockPage() {
   }, [refreshInterval]);
 
   // Process chart data
+  // Parse chart data from IndianAPI response
   const chartData = React.useMemo(() => {
-    if (!currentData) return [];
+    if (!currentData?.candleData) return [];
     
     try {
-      return parseTimeSeriesAlphaVantage(currentData, selectedTimeFrame);
+      return currentData.candleData;
     } catch (error) {
       console.error('Error parsing chart data:', error);
       return [];
     }
-  }, [currentData, selectedTimeFrame]);
+  }, [currentData]);
 
   console.log(currentData, "currentData")
 
@@ -114,46 +122,23 @@ export default function StockPage() {
   const mockChartData = React.useMemo(() => {
     if (chartData.length > 0) return chartData;
     
-    // Generate mock data for demo purposes
-    const now = new Date();
-    const mockData: typeof chartData = [];
-    
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
-      
-      const basePrice = 200 + Math.random() * 100;
-      const open = basePrice + (Math.random() - 0.5) * 10;
-      const close = open + (Math.random() - 0.5) * 15;
-      const high = Math.max(open, close) + Math.random() * 5;
-      const low = Math.min(open, close) - Math.random() * 5;
-      
-      mockData.push({
-        time: date.toISOString().split('T')[0],
-        open,
-        high,
-        low,
-        close,
-        volume: Math.floor(Math.random() * 1000000),
-      });
-    }
-    
-    return mockData;
-  }, [chartData]);
+    // Generate mock data using IndianAPI adapter
+    return generateMockIndianCandleData(symbol || 'RELIANCE', 30);
+  }, [chartData, symbol]);
 
-  // Calculate latest price info using mock data if needed
+  // Use real stock data if available, otherwise use mock chart data
   const displayData = mockChartData;
-  const latestData = displayData[displayData.length - 1];
-  const previousData = displayData[displayData.length - 2];
-  
-  const change = latestData && previousData ? latestData.close - previousData.close : 0;
-  const changePercent = previousData ? (change / previousData.close) * 100 : 0;
+  const currentPrice = stockData?.price || displayData[displayData.length - 1]?.close || 0;
+  const change = stockData?.change || 0;
+  const changePercent = stockData?.changePercent || 0;
+  const volume = stockData?.volume || displayData[displayData.length - 1]?.volume || 0;
+  const lastUpdated = stockData?.lastUpdated || new Date().toISOString();
   const isPositive = change >= 0;
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       minimumFractionDigits: 2,
     }).format(price);
   };
@@ -216,16 +201,16 @@ export default function StockPage() {
         </div>
 
         {/* Price Summary */}
-        {latestData && (
+        {displayData.length > 0 && (
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Current Price</CardTitle>
-              <CardDescription>Last updated: {new Date().toLocaleTimeString()}</CardDescription>
+              <CardDescription>Last updated: {new Date(lastUpdated).toLocaleTimeString()}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center space-x-4">
                 <div className="text-3xl font-bold">
-                  {formatPrice(latestData.close)}
+                  {formatPrice(currentPrice)}
                 </div>
                 <div className={`flex items-center space-x-1 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
                   {isPositive ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
@@ -267,7 +252,7 @@ export default function StockPage() {
                 <AlertCircle className="h-12 w-12 text-destructive mb-4" />
                 <p className="text-lg font-medium text-destructive mb-2">Failed to load chart data</p>
                 <p className="text-sm text-muted-foreground mb-4">
-                  {currentError && 'data' in currentError ? (currentError.data as any)?.error : 'Network error'}
+                  {currentError && 'data' in currentError ? (currentError.data as { error?: string })?.error : 'Network error'}
                 </p>
                 <Button onClick={handleRefreshManual}>
                   <RefreshCw className="h-4 w-4 mr-2" />
@@ -288,7 +273,7 @@ export default function StockPage() {
         </Card>
 
         {/* Stock metrics */}
-        {latestData && (
+        {displayData.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>Trading Summary</CardTitle>
@@ -297,19 +282,19 @@ export default function StockPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 <div>
                   <p className="text-sm text-muted-foreground">Open</p>
-                  <p className="text-xl font-semibold">{formatPrice(latestData.open)}</p>
+                  <p className="text-xl font-semibold">{formatPrice(displayData[displayData.length - 1]?.open || 0)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">High</p>
-                  <p className="text-xl font-semibold">{formatPrice(latestData.high)}</p>
+                  <p className="text-xl font-semibold">{formatPrice(displayData[displayData.length - 1]?.high || 0)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Low</p>
-                  <p className="text-xl font-semibold">{formatPrice(latestData.low)}</p>
+                  <p className="text-xl font-semibold">{formatPrice(displayData[displayData.length - 1]?.low || 0)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Volume</p>
-                  <p className="text-xl font-semibold">{formatVolume(latestData.volume || 0)}</p>
+                  <p className="text-xl font-semibold">{formatVolume(volume)}</p>
                 </div>
               </div>
             </CardContent>

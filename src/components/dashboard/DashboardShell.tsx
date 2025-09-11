@@ -7,7 +7,7 @@ import { updateLayout, selectWidget } from '@/store/slices/widgetsSlice';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { Plus, Settings, Download, Upload } from 'lucide-react';
+import { Plus, Settings } from 'lucide-react';
 import { WidgetContainer } from './WidgetContainer';
 import { AddWidgetModal } from './AddWidgetModal';
 import { DashboardSettings } from './DashboardSettings';

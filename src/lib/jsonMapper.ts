@@ -2,12 +2,12 @@
 
 export interface JsonPath {
   path: string;
-  value: any;
+  value: unknown;
   type: string;
   isArray: boolean;
 }
 
-export function extractField(data: any, path: string): any {
+export function extractField(data: unknown, path: string): unknown {
   if (!path || path === '') return data;
   
   const pathParts = path.split('.');
@@ -18,28 +18,34 @@ export function extractField(data: any, path: string): any {
       return undefined;
     }
     
+    if (typeof current !== 'object' || Array.isArray(current)) {
+      return undefined;
+    }
+    
+    const currentObj = current as Record<string, unknown>;
+    
     // Handle array indices like "data[0]"
     const arrayMatch = part.match(/^(.+)\[(\d+)\]$/);
     if (arrayMatch) {
       const [, arrayName, index] = arrayMatch;
-      current = current[arrayName];
+      current = currentObj[arrayName];
       if (Array.isArray(current)) {
         current = current[parseInt(index, 10)];
       }
     } else {
-      current = current[part];
+      current = currentObj[part];
     }
   }
   
   return current;
 }
 
-export function exploreJSON(data: any, maxDepth: number = 3, currentPath: string = ''): JsonPath[] {
+export function exploreJSON(data: unknown, maxDepth: number = 3, currentPath: string = ''): JsonPath[] {
   const paths: JsonPath[] = [];
   
   if (maxDepth <= 0) return paths;
   
-  const explore = (obj: any, path: string, depth: number) => {
+  const explore = (obj: unknown, path: string, depth: number) => {
     if (depth > maxDepth || obj === null || obj === undefined) return;
     
     if (typeof obj === 'object') {
@@ -96,7 +102,7 @@ export function exploreJSON(data: any, maxDepth: number = 3, currentPath: string
   return paths;
 }
 
-export function getValuePreview(value: any, maxLength: number = 50): string {
+export function getValuePreview(value: unknown, maxLength: number = 50): string {
   if (value === null) return 'null';
   if (value === undefined) return 'undefined';
   
@@ -108,17 +114,17 @@ export function getValuePreview(value: any, maxLength: number = 50): string {
   return preview;
 }
 
-export function isNumericPath(data: any, path: string): boolean {
+export function isNumericPath(data: unknown, path: string): boolean {
   const value = extractField(data, path);
-  return typeof value === 'number' || (!isNaN(parseFloat(value)) && isFinite(value));
+  return typeof value === 'number' || (typeof value === 'string' && !isNaN(parseFloat(value)) && isFinite(parseFloat(value)));
 }
 
-export function isDatePath(data: any, path: string): boolean {
+export function isDatePath(data: unknown, path: string): boolean {
   const value = extractField(data, path);
   if (!value) return false;
   
   // Check if it's a valid date string or timestamp
-  const date = new Date(value);
+  const date = new Date(String(value));
   return !isNaN(date.getTime());
 }
 
@@ -159,7 +165,7 @@ export function suggestMappings(paths: JsonPath[]): Record<string, string[]> {
 }
 
 // Detect if JSON data represents time-series stock data
-export function detectTimeSeriesStockData(data: any): {
+export function detectTimeSeriesStockData(data: unknown): {
   isStockData: boolean;
   dataType: 'candlestick' | 'table' | 'unknown';
   detectedFields?: {
@@ -176,15 +182,16 @@ export function detectTimeSeriesStockData(data: any): {
   }
 
   // Check for AlphaVantage-style time series
-  const timeSeriesKeys = Object.keys(data).filter(key => 
+  const dataObj = data as Record<string, unknown>;
+  const timeSeriesKeys = Object.keys(dataObj).filter(key => 
     key.toLowerCase().includes('time series') || 
     key.toLowerCase().includes('time_series')
   );
 
   if (timeSeriesKeys.length > 0) {
-    const timeSeriesData = data[timeSeriesKeys[0]];
+    const timeSeriesData = dataObj[timeSeriesKeys[0]];
     if (timeSeriesData && typeof timeSeriesData === 'object') {
-      const firstEntry = Object.values(timeSeriesData)[0] as any;
+      const firstEntry = Object.values(timeSeriesData)[0] as Record<string, unknown>;
       if (firstEntry && typeof firstEntry === 'object') {
         const keys = Object.keys(firstEntry).map(k => k.toLowerCase());
         
@@ -253,7 +260,7 @@ export function detectTimeSeriesStockData(data: any): {
 }
 
 // Convert generic data to table format
-export function convertToTableData(data: any): { columns: string[]; rows: any[] } {
+export function convertToTableData(data: unknown): { columns: string[]; rows: Record<string, unknown>[] } {
   if (Array.isArray(data)) {
     if (data.length === 0) return { columns: [], rows: [] };
     
@@ -274,13 +281,19 @@ export function convertToTableData(data: any): { columns: string[]; rows: any[] 
   
   if (typeof data === 'object' && data !== null) {
     // Special handling for Coinbase exchange rates API
-    if (data.data && data.data.currency && data.data.rates) {
-      const currency = data.data.currency;
-      const rates = data.data.rates;
+    const dataObj = data as Record<string, unknown>;
+    if (dataObj.data && 
+        typeof dataObj.data === 'object' && 
+        dataObj.data !== null &&
+        'currency' in dataObj.data && 
+        'rates' in dataObj.data) {
+      const nestedData = dataObj.data as Record<string, unknown>;
+      const currency = nestedData.currency;
+      const rates = nestedData.rates;
       
       return {
         columns: ['Currency', `Rate (per 1 ${currency})`, 'Type'],
-        rows: Object.entries(rates).map(([currencyCode, rate]) => ({
+        rows: Object.entries(rates as Record<string, unknown>).map(([currencyCode, rate]) => ({
           Currency: currencyCode,
           [`Rate (per 1 ${currency})`]: typeof rate === 'string' ? parseFloat(rate).toFixed(6) : rate,
           Type: getCurrencyType(currencyCode)
@@ -289,15 +302,15 @@ export function convertToTableData(data: any): { columns: string[]; rows: any[] 
     }
     
     // Special handling for nested data structures (look for common patterns)
-    if (data.data && typeof data.data === 'object') {
-      return convertToTableData(data.data);
+    if (dataObj.data && typeof dataObj.data === 'object') {
+      return convertToTableData(dataObj.data);
     }
     
     // Handle objects with rates/prices/values structure
-    if (data.rates && typeof data.rates === 'object') {
+    if (dataObj.rates && typeof dataObj.rates === 'object') {
       return {
         columns: ['Currency', 'Rate'],
-        rows: Object.entries(data.rates).map(([key, value]) => ({
+        rows: Object.entries(dataObj.rates as Record<string, unknown>).map(([key, value]) => ({
           Currency: key,
           Rate: typeof value === 'string' ? parseFloat(value).toFixed(6) : value
         }))
@@ -307,7 +320,7 @@ export function convertToTableData(data: any): { columns: string[]; rows: any[] 
     // Convert object to key-value pairs (fallback)
     return {
       columns: ['Key', 'Value'],
-      rows: Object.entries(data).map(([key, value]) => ({
+      rows: Object.entries(dataObj).map(([key, value]) => ({
         Key: key,
         Value: typeof value === 'object' ? JSON.stringify(value) : value
       }))

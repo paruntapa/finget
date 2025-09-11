@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { rateLimitMiddleware, getRateLimitStatus } from '../rateLimit';
+import { rateLimitMiddleware, getRateLimitStatus } from '../../rateLimit';
+
+const COINBASE_API_BASE_URL = 'https://api.exchange.coinbase.com';
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const url = searchParams.get('url');
-
-  // Rate limiting based on IP
+  // Rate limiting
   const clientIP = request.headers.get('x-forwarded-for') || 
                   request.headers.get('x-real-ip') || 
                   'unknown';
@@ -29,61 +28,57 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Generic proxy for custom URLs only
-    if (!url) {
-      return NextResponse.json({ error: 'URL parameter required' }, { status: 400 });
-    }
+    // Sparkline endpoint: /products/spark-lines
+    const coinbaseUrl = `${COINBASE_API_BASE_URL}/products/spark-lines`;
     
-    let targetUrl: string;
-    try {
-      new URL(url); // Validate URL format
-      targetUrl = url;
-    } catch {
-      return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
-    }
+    console.log(`Fetching from Coinbase: ${coinbaseUrl}`);
 
-    // Fetch data from target URL
-    const response = await fetch(targetUrl, {
+    // Fetch from Coinbase API
+    const response = await fetch(coinbaseUrl, {
+      method: 'GET',
       headers: {
-        'User-Agent': 'FinGet/1.0',
         'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'FinGet-Dashboard/1.0',
       },
-      // Add timeout
-      signal: AbortSignal.timeout(10000), // 10 second timeout
+      signal: AbortSignal.timeout(15000), // 15 second timeout
     });
 
     if (!response.ok) {
-      return NextResponse.json({
-        error: `Upstream API error: ${response.status} ${response.statusText}`,
-      }, { status: response.status });
+      throw new Error(`Coinbase API responded with ${response.status}: ${response.statusText}`);
     }
 
     const data = await response.json();
-    
-    // Set rate limit headers for client
-    const status = getRateLimitStatus(identifier);
-    
-    const headers = new Headers({
-      'X-RateLimit-Limit': '60',
-      'X-RateLimit-Remaining': status.remaining.toString(),
-      'X-RateLimit-Reset': status.resetTime.toString(),
+
+    // Check for Coinbase specific errors
+    if (data.message) {
+      return NextResponse.json({
+        error: 'Coinbase API Error',
+        message: data.message,
+        data: data
+      }, { status: 400 });
+    }
+
+    // Success response with cache headers
+    const responseHeaders = new Headers({
+      'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET',
       'Access-Control-Allow-Headers': 'Content-Type',
-      'Cache-Control': 'public, max-age=300', // Cache response for 5 minutes
+      'Cache-Control': 'public, max-age=30, stale-while-revalidate=60', // 30 sec cache
     });
     
-    return NextResponse.json(data, { headers });
+    return NextResponse.json(data, { headers: responseHeaders });
     
   } catch (error: unknown) {
-    console.error('Proxy error:', error);
+    console.error('Coinbase spark-lines proxy error:', error);
     
     if (error instanceof Error && error.name === 'AbortError') {
       return NextResponse.json({ error: 'Request timeout' }, { status: 408 });
     }
     
     return NextResponse.json({ 
-      error: 'Failed to fetch data',
+      error: 'Failed to fetch Coinbase spark-lines data',
       details: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined
     }, { status: 500 });
   }
