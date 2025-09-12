@@ -6,7 +6,6 @@ const INDIAN_API_BASE_URL = 'https://stock.indianapi.in';
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   
-  // Get required symbol parameter
   const symbol = searchParams.get('symbol');
   if (!symbol) {
     return NextResponse.json({ 
@@ -14,7 +13,6 @@ export async function GET(request: NextRequest) {
     }, { status: 400 });
   }
 
-  // Get API key from environment
   const apiKey = process.env.INDIAN_STOCK_API;
   if (!apiKey) {
     return NextResponse.json({ 
@@ -23,7 +21,6 @@ export async function GET(request: NextRequest) {
     }, { status: 500 });
   }
 
-  // Rate limiting
   const clientIP = request.headers.get('x-forwarded-for') || 
                   request.headers.get('x-real-ip') || 
                   'unknown';
@@ -47,13 +44,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Build IndianAPI URL for stock endpoint (singular, uses 'name' parameter)
     const url = new URL(`${INDIAN_API_BASE_URL}/stock`);
     url.searchParams.set('name', symbol);
 
     console.log(`Fetching from IndianAPI: ${url.toString()}`);
 
-    // Fetch from IndianAPI with API key in headers
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
@@ -61,7 +56,7 @@ export async function GET(request: NextRequest) {
         'User-Agent': 'FinGet-Dashboard/1.0',
         'X-Api-Key': apiKey,
       },
-      signal: AbortSignal.timeout(10000), // 10 second timeout
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!response.ok) {
@@ -73,7 +68,6 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
-    // Check for IndianAPI specific errors
     if (data.error || data.Error) {
       return NextResponse.json({
         error: 'IndianAPI Error',
@@ -82,13 +76,12 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Success response with cache headers
     const responseHeaders = new Headers({
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET',
       'Access-Control-Allow-Headers': 'Content-Type',
-      'Cache-Control': 'public, max-age=60, stale-while-revalidate=120', // 1 min cache, 2 min stale
+      'Cache-Control': 'public, max-age=60, stale-while-revalidate=120',
     });
     
     return NextResponse.json(data, { headers: responseHeaders });

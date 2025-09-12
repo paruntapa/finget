@@ -1,7 +1,6 @@
-// Adapter for IndianAPI.in data normalization
 
 export interface CandleData {
-  time: string | number; // Support both UNIX timestamp and date string
+  time: string | number; 
   open: number;
   high: number;
   low: number;
@@ -25,8 +24,6 @@ export interface StockMetadata {
   timeZone: string;
 }
 
-// IndianAPI response interfaces (actual format from stock.indianapi.in)
-// The API returns detailed financial data, we'll extract what we can
 export interface IndianAPIStockResponse {
   stockName?: string;
   stockSymbol?: string;
@@ -52,7 +49,6 @@ export interface IndianAPIStockResponse {
     date: string;
     url: string;
   }>;
-  // Since API doesn't provide direct price/change, we'll use mock data
   currentPrice?: number;
   priceChange?: number;
   priceChangePercent?: number;
@@ -89,15 +85,9 @@ export interface IndianAPIListResponse {
   }>;
 }
 
-/**
- * Parse IndianAPI stock price response to StockQuote format
- */
 export function parseIndianStockResponse(response: IndianAPIStockResponse, symbol: string): StockQuote {
-  // Since the API returns detailed financial data but not simple quotes,
-  // we'll generate realistic mock data for demonstration
   const mockData = generateMockIndianStockQuote(symbol);
   
-  // Log what we're getting from the API to debug
   console.log(`IndianAPI response for ${symbol}:`, {
     currentPrice: response.currentPrice,
     priceChange: response.priceChange,
@@ -107,7 +97,6 @@ export function parseIndianStockResponse(response: IndianAPIStockResponse, symbo
   
   console.log(`Mock data for ${symbol}:`, mockData);
   
-  // Since the API doesn't provide current prices, always use mock data
   return {
     symbol: symbol,
     price: mockData.price,
@@ -118,9 +107,6 @@ export function parseIndianStockResponse(response: IndianAPIStockResponse, symbo
   };
 }
 
-/**
- * Parse IndianAPI historical data to candlestick format
- */
 export function parseIndianHistoryResponse(
   response: IndianAPIHistoryResponse
 ): CandleData[] {
@@ -142,9 +128,6 @@ export function parseIndianHistoryResponse(
     .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()); // Sort by date ascending
 }
 
-/**
- * Extract metadata from IndianAPI response
- */
 export function extractIndianStockMetadata(
   response: IndianAPIHistoryResponse | IndianAPIStockResponse
 ): StockMetadata | null {
@@ -169,21 +152,16 @@ export function extractIndianStockMetadata(
   return null;
 }
 
-/**
- * Generate mock candlestick data for demo purposes
- * Useful when API limits are reached or for development
- */
 export function generateMockIndianCandleData(symbol: string, days: number = 30): CandleData[] {
   const data: CandleData[] = [];
-  const basePrice = 1000 + Math.random() * 4000; // Random base price between 1000-5000
+  const basePrice = 1000 + Math.random() * 4000; 
   let currentPrice = basePrice;
 
   for (let i = days; i >= 0; i--) {
     const date = new Date();
     date.setDate(date.getDate() - i);
     
-    // Generate realistic OHLC data
-    const volatility = 0.02; // 2% daily volatility
+    const volatility = 0.02; 
     const change = (Math.random() - 0.5) * volatility * currentPrice;
     
     const open = currentPrice;
@@ -193,7 +171,7 @@ export function generateMockIndianCandleData(symbol: string, days: number = 30):
     const volume = Math.floor(100000 + Math.random() * 900000); // Random volume
 
     data.push({
-      time: date.toISOString().split('T')[0], // YYYY-MM-DD format
+      time: date.toISOString().split('T')[0], 
       open: Number(open.toFixed(2)),
       high: Number(high.toFixed(2)),
       low: Number(low.toFixed(2)),
@@ -207,11 +185,7 @@ export function generateMockIndianCandleData(symbol: string, days: number = 30):
   return data;
 }
 
-/**
- * Generate mock Indian stock quote for testing/fallback
- */
 export function generateMockIndianStockQuote(symbol: string): StockQuote {
-  // Realistic price ranges for popular Indian stocks
   const basePrices: Record<string, number> = {
     'RELIANCE': 2850,
     'TCS': 4200,
@@ -226,13 +200,13 @@ export function generateMockIndianStockQuote(symbol: string): StockQuote {
   };
 
   const basePrice = basePrices[symbol] || 1500;
-  const randomFactor = 0.95 + Math.random() * 0.1; // ±5% variation
+  const randomFactor = 0.95 + Math.random() * 0.1; 
   const price = Math.round(basePrice * randomFactor * 100) / 100;
   
-  const changePercent = (Math.random() - 0.5) * 6; // ±3% change
+  const changePercent = (Math.random() - 0.5) * 6; 
   const change = Math.round(price * (changePercent / 100) * 100) / 100;
   
-  const volume = Math.floor(Math.random() * 1000000) + 100000; // 100K - 1M volume
+  const volume = Math.floor(Math.random() * 1000000) + 100000; 
 
   return {
     symbol,
@@ -244,9 +218,6 @@ export function generateMockIndianStockQuote(symbol: string): StockQuote {
   };
 }
 
-/**
- * Popular Indian stocks list for demo/fallback
- */
 export const POPULAR_INDIAN_STOCKS = [
   { symbol: 'RELIANCE', name: 'Reliance Industries Ltd' },
   { symbol: 'TCS', name: 'Tata Consultancy Services Ltd' },
@@ -265,9 +236,6 @@ export const POPULAR_INDIAN_STOCKS = [
   { symbol: 'BAJFINANCE', name: 'Bajaj Finance Ltd' },
 ];
 
-/**
- * Build IndianAPI URL for different endpoints
- */
 export function buildIndianAPIUrl(
   endpoint: 'stocks' | 'history' | 'list',
   params: Record<string, string> = {}
@@ -282,9 +250,6 @@ export function buildIndianAPIUrl(
   return url.toString();
 }
 
-/**
- * Sample IndianAPI responses for development/testing
- */
 export const sampleIndianStockResponse: IndianAPIStockResponse = {
   stockName: 'Reliance Industries Ltd',
   stockSymbol: 'RELIANCE',

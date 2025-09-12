@@ -4,9 +4,7 @@ import React, { useEffect, useRef } from 'react';
 import { createChart, IChartApi, CandlestickSeries, Time } from 'lightweight-charts';
 import { CandleData } from '@/lib/adapters/coinbaseAdapter';
 
-// Theme-based colors
 const getChartTheme = () => {
-  // Check if we're in dark mode by looking for the 'dark' class on html
   const isDark = typeof window !== 'undefined' && 
     document.documentElement.classList.contains('dark');
   
@@ -30,7 +28,6 @@ export function CandleChart({ data, height = 400, className = '' }: CandleChartP
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ReturnType<IChartApi['addSeries']> | null>(null);
 
-  // Initialize chart
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
@@ -71,7 +68,6 @@ export function CandleChart({ data, height = 400, className = '' }: CandleChartP
 
     chartRef.current = chart;
 
-    // Add candlestick series
     const candlestickSeries = chart.addSeries(CandlestickSeries, {
       upColor: theme.upColor,
       downColor: theme.downColor,
@@ -83,7 +79,6 @@ export function CandleChart({ data, height = 400, className = '' }: CandleChartP
 
     seriesRef.current = candlestickSeries;
 
-    // Handle resize
     const handleResize = () => {
       if (chartContainerRef.current && chartRef.current) {
         chartRef.current.applyOptions({
@@ -104,27 +99,19 @@ export function CandleChart({ data, height = 400, className = '' }: CandleChartP
     };
   }, [height]);
 
-  // Update chart data when data changes
   useEffect(() => {
     if (!seriesRef.current || !data.length) return;
 
     try {
-      console.log('Chart data received:', data.slice(0, 3)); // Debug: log first 3 items
+      console.log('Chart data received:', data.slice(0, 3)); 
       
-      // Format data for lightweight-charts
       const formattedData = data.map(item => {
         let timeValue;
-        if (typeof item.time === 'number') {
-          // Convert UNIX timestamp to YYYY-MM-DD format for daily data
-          // or use timestamp directly for intraday (lightweight-charts accepts both)
-          timeValue = item.time;
-        } else {
-          // If it's already a string, use it as is
-          timeValue = item.time;
-        }
+        
+        timeValue = item.time;
         
         return {
-          time: timeValue as Time, // Convert to lightweight-charts Time type
+          time: timeValue as Time,
           open: item.open,
           high: item.high,
           low: item.low,
@@ -132,7 +119,7 @@ export function CandleChart({ data, height = 400, className = '' }: CandleChartP
         };
       });
 
-      console.log('Formatted chart data:', formattedData.slice(0, 3)); // Debug: log formatted data
+      console.log('Formatted chart data:', formattedData.slice(0, 3)); 
 
       // Set data and fit content
       seriesRef.current.setData(formattedData);

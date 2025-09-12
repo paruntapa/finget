@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimitMiddleware, getRateLimitStatus } from '../../rateLimit';
 
-const INDIAN_API_BASE_URL = 'https://stock.indianapi.in';
-
-// Generate mock historical data since IndianAPI doesn't provide historical pricing
 function generateMockHistoricalData(symbol: string, period: string) {
   const days = period === '1d' ? 30 : period === '1w' ? 90 : 365;
   const data = [];
   
-  // Base prices for different stocks
   const basePrices: Record<string, number> = {
     'RELIANCE': 2850,
     'TCS': 4200,
@@ -29,11 +25,9 @@ function generateMockHistoricalData(symbol: string, period: string) {
     const date = new Date(today);
     date.setDate(today.getDate() - i);
     
-    // Add some realistic price movement (±3% daily)
-    const change = (Math.random() - 0.5) * 0.06; // ±3%
+    const change = (Math.random() - 0.5) * 0.06; 
     currentPrice = currentPrice * (1 + change);
     
-    // Generate OHLC based on current price
     const open = currentPrice * (0.98 + Math.random() * 0.04);
     const close = currentPrice * (0.98 + Math.random() * 0.04);
     const high = Math.max(open, close) * (1 + Math.random() * 0.02);
@@ -61,7 +55,6 @@ function generateMockHistoricalData(symbol: string, period: string) {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   
-  // Get required parameters
   const symbol = searchParams.get('symbol');
   const period = searchParams.get('period') || '1d';
   
@@ -71,7 +64,6 @@ export async function GET(request: NextRequest) {
     }, { status: 400 });
   }
 
-  // Get API key from environment
   const apiKey = process.env.INDIAN_STOCK_API;
   if (!apiKey) {
     return NextResponse.json({ 
@@ -80,7 +72,6 @@ export async function GET(request: NextRequest) {
     }, { status: 500 });
   }
 
-  // Rate limiting
   const clientIP = request.headers.get('x-forwarded-for') || 
                   request.headers.get('x-real-ip') || 
                   'unknown';
@@ -104,20 +95,16 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Since IndianAPI doesn't provide historical pricing data in the format we need,
-    // we'll generate realistic mock data for demonstration
     console.log(`Generating mock historical data for ${symbol} with period ${period}`);
 
-    // Generate mock historical data based on the symbol and period
     const mockHistoryData = generateMockHistoricalData(symbol, period);
 
-    // Success response with cache headers
     const responseHeaders = new Headers({
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET',
       'Access-Control-Allow-Headers': 'Content-Type',
-      'Cache-Control': 'public, max-age=300, stale-while-revalidate=600', // 5 min cache for mock data
+      'Cache-Control': 'public, max-age=300, stale-while-revalidate=600', 
     });
     
     return NextResponse.json(mockHistoryData, { headers: responseHeaders });

@@ -1,7 +1,5 @@
-// Adapter for Coinbase API data normalization
-
 export interface CandleData {
-  time: string | number; // Support both UNIX timestamp and date string
+  time: string | number; 
   open: number;
   high: number;
   low: number;
@@ -25,31 +23,25 @@ export interface CryptoMetadata {
   lastRefreshed: string;
 }
 
-// Coinbase API response interfaces
 export interface CoinbaseSparkLineResponse {
-  [symbol: string]: Array<[number, number, number, number, number]>; // [timestamp, open, high, low, close]
+  [symbol: string]: Array<[number, number, number, number, number]>; 
 }
 
 export type CoinbaseCandleResponse = Array<[number, number, number, number, number, number]>;
-// [timestamp, low, high, open, close, volume]
 
-/**
- * Parse Coinbase sparkline response to crypto quotes
- */
 export function parseCoinbaseSparkLines(response: CoinbaseSparkLineResponse): CryptoQuote[] {
   const quotes: CryptoQuote[] = [];
 
   Object.entries(response).forEach(([symbol, sparklineData]) => {
     if (!sparklineData || sparklineData.length < 2) return;
 
-    // Get latest and previous candles for change calculation
-    const latestCandle = sparklineData[0]; // Most recent
-    const previousCandle = sparklineData[1]; // Previous for comparison
+    const latestCandle = sparklineData[0]; 
+    const previousCandle = sparklineData[1]; 
 
     if (!latestCandle || !previousCandle) return;
 
     const [timestamp, , , , close] = latestCandle;
-    const previousClose = previousCandle[4]; // Previous close price
+    const previousClose = previousCandle[4]; 
 
     const change = close - previousClose;
     const changePercent = previousClose !== 0 ? (change / previousClose) * 100 : 0;
@@ -59,7 +51,7 @@ export function parseCoinbaseSparkLines(response: CoinbaseSparkLineResponse): Cr
       price: close,
       change,
       changePercent,
-      volume: 0, // Sparkline doesn't include volume
+      volume: 0, 
       lastUpdated: new Date(timestamp * 1000).toISOString(),
     });
   });
@@ -67,9 +59,6 @@ export function parseCoinbaseSparkLines(response: CoinbaseSparkLineResponse): Cr
   return quotes;
 }
 
-/**
- * Parse Coinbase candles response to candlestick format
- */
 export function parseCoinbaseCandles(
   response: CoinbaseCandleResponse
 ): CandleData[] {
@@ -85,7 +74,7 @@ export function parseCoinbaseCandles(
       const [timestamp, low, high, open, close, volume] = candle;
 
       return {
-        time: timestamp, // Keep as UNIX timestamp for intraday charts
+        time: timestamp, 
         open: Number(open),
         high: Number(high),
         low: Number(low),
@@ -98,14 +87,11 @@ export function parseCoinbaseCandles(
       const aTime = typeof a.time === 'number' ? a.time * 1000 : new Date(a.time).getTime();
       const bTime = typeof b.time === 'number' ? b.time * 1000 : new Date(b.time).getTime();
       return aTime - bTime;
-    }); // Sort ascending by time
+    }); 
 
   return candleData;
 }
 
-/**
- * Extract metadata from crypto symbol
- */
 export function extractCryptoMetadata(symbol: string): CryptoMetadata {
   const [baseCurrency, quoteCurrency] = symbol.split('-');
   
@@ -117,13 +103,9 @@ export function extractCryptoMetadata(symbol: string): CryptoMetadata {
   };
 }
 
-/**
- * Generate mock crypto data for demo purposes
- */
 export function generateMockCryptoData(symbol: string, days: number = 30): CandleData[] {
   const data: CandleData[] = [];
   
-  // Base prices for different cryptocurrencies
   const basePrices: Record<string, number> = {
     'BTC-USD': 45000,
     'ETH-USD': 3200,
@@ -142,18 +124,17 @@ export function generateMockCryptoData(symbol: string, days: number = 30): Candl
     const date = new Date();
     date.setDate(date.getDate() - i);
     
-    // Generate realistic OHLC data with higher volatility for crypto
-    const volatility = 0.05; // 5% daily volatility
+    const volatility = 0.05; 
     const change = (Math.random() - 0.5) * volatility * currentPrice;
     
     const open = currentPrice;
     const close = currentPrice + change;
     const high = Math.max(open, close) + Math.random() * 0.02 * currentPrice;
     const low = Math.min(open, close) - Math.random() * 0.02 * currentPrice;
-    const volume = Math.floor(1000 + Math.random() * 9000); // Random volume
+    const volume = Math.floor(1000 + Math.random() * 9000); 
 
     data.push({
-      time: date.toISOString().split('T')[0], // YYYY-MM-DD format
+      time: date.toISOString().split('T')[0], 
       open: Number(open.toFixed(2)),
       high: Number(high.toFixed(2)),
       low: Number(low.toFixed(2)),
@@ -167,9 +148,6 @@ export function generateMockCryptoData(symbol: string, days: number = 30): Candl
   return data;
 }
 
-/**
- * Popular crypto pairs for demo/fallback
- */
 export const POPULAR_CRYPTO_PAIRS = [
   { symbol: 'BTC-USD', name: 'Bitcoin', category: 'Layer 1' },
   { symbol: 'ETH-USD', name: 'Ethereum', category: 'Layer 1' },
@@ -181,9 +159,6 @@ export const POPULAR_CRYPTO_PAIRS = [
   { symbol: 'ATOM-USD', name: 'Cosmos', category: 'Layer 0' },
 ];
 
-/**
- * Granularity options for Coinbase candles
- */
 export const COINBASE_GRANULARITIES = {
   '1m': { seconds: 60, label: '1 Minute' },
   '5m': { seconds: 300, label: '5 Minutes' },
@@ -195,9 +170,6 @@ export const COINBASE_GRANULARITIES = {
 
 export type GranularityKey = keyof typeof COINBASE_GRANULARITIES;
 
-/**
- * Build Coinbase API URL for different endpoints
- */
 export function buildCoinbaseUrl(
   endpoint: 'spark-lines' | 'candles',
   params: Record<string, string> = {}
@@ -212,9 +184,6 @@ export function buildCoinbaseUrl(
   return url.toString();
 }
 
-/**
- * Format crypto price based on value
- */
 export function formatCryptoPrice(price: number): string {
   if (price >= 1000) {
     return new Intl.NumberFormat('en-US', {
@@ -240,9 +209,6 @@ export function formatCryptoPrice(price: number): string {
   }
 }
 
-/**
- * Sample Coinbase responses for development/testing
- */
 export const sampleCoinbaseSparkLineResponse: CoinbaseSparkLineResponse = {
   'BTC-USD': [
     [Date.now() / 1000, 45000, 45500, 44800, 45200],

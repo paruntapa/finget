@@ -30,7 +30,6 @@ interface StockTableProps {
   widget: Widget;
 }
 
-// Popular Indian stocks (compatible with IndianAPI)
 const INDIAN_STOCKS = [
   'RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 
   'HDFC', 'SBIN', 'BHARTIARTL', 'ITC', 'WIPRO',
@@ -51,7 +50,6 @@ export function StockTable({ widget }: StockTableProps) {
     return INDIAN_STOCKS;
   }, [widget.config.symbols]);
 
-  // Fetch real stock data from IndianAPI
   const { 
     data: stockQuotes = [], 
     error, 
@@ -65,12 +63,10 @@ export function StockTable({ widget }: StockTableProps) {
     }
   );
 
-  // Debug logging to see what data we're getting
   console.log('StockTable - stockQuotes data:', stockQuotes);
   console.log('StockTable - error:', error);
   console.log('StockTable - isLoading:', isLoading);
 
-  // Filter stocks based on search term
   const filteredStocks = useMemo(() => {
     if (!searchTerm.trim()) return stockQuotes;
     
@@ -80,7 +76,6 @@ export function StockTable({ widget }: StockTableProps) {
     );
   }, [stockQuotes, searchTerm]);
 
-  // Pagination
   const totalPages = Math.ceil(filteredStocks.length / itemsPerPage);
   const paginatedStocks = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -95,13 +90,10 @@ export function StockTable({ widget }: StockTableProps) {
     router.push(`/stock/${symbol}`);
   };
 
-  // No region change needed - IndianAPI only supports Indian stocks
 
   const formatPrice = (price: number) => {
-    // Debug logging to see what price values we're getting
     console.log('formatPrice called with:', price, typeof price);
     
-    // Ensure price is a valid number
     if (price === undefined || price === null || isNaN(price)) {
       console.warn('Invalid price value:', price);
       return '₹0.00';
