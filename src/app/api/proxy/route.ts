@@ -29,27 +29,24 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Generic proxy for custom URLs only
     if (!url) {
       return NextResponse.json({ error: 'URL parameter required' }, { status: 400 });
     }
     
     let targetUrl: string;
     try {
-      new URL(url); // Validate URL format
+      new URL(url); 
       targetUrl = url;
     } catch {
       return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
     }
 
-    // Fetch data from target URL
     const response = await fetch(targetUrl, {
       headers: {
         'User-Agent': 'FinGet/1.0',
         'Accept': 'application/json',
       },
-      // Add timeout
-      signal: AbortSignal.timeout(10000), // 10 second timeout
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!response.ok) {
@@ -70,7 +67,7 @@ export async function GET(request: NextRequest) {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET',
       'Access-Control-Allow-Headers': 'Content-Type',
-      'Cache-Control': 'public, max-age=300', // Cache response for 5 minutes
+      'Cache-Control': 'public, max-age=300', 
     });
     
     return NextResponse.json(data, { headers });

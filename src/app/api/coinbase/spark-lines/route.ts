@@ -33,7 +33,6 @@ export async function GET(request: NextRequest) {
     
     console.log(`Fetching from Coinbase: ${coinbaseUrl}`);
 
-    // Fetch from Coinbase API
     const response = await fetch(coinbaseUrl, {
       method: 'GET',
       headers: {
@@ -41,7 +40,7 @@ export async function GET(request: NextRequest) {
         'Content-Type': 'application/json',
         'User-Agent': 'FinGet-Dashboard/1.0',
       },
-      signal: AbortSignal.timeout(15000), // 15 second timeout
+      signal: AbortSignal.timeout(15000), 
     });
 
     if (!response.ok) {
@@ -50,7 +49,6 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
-    // Check for Coinbase specific errors
     if (data.message) {
       return NextResponse.json({
         error: 'Coinbase API Error',
@@ -65,7 +63,7 @@ export async function GET(request: NextRequest) {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET',
       'Access-Control-Allow-Headers': 'Content-Type',
-      'Cache-Control': 'public, max-age=30, stale-while-revalidate=60', // 30 sec cache
+      'Cache-Control': 'public, max-age=30, stale-while-revalidate=60', 
     });
     
     return NextResponse.json(data, { headers: responseHeaders });

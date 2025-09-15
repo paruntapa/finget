@@ -12,7 +12,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-// Removed unused Select imports
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, Bitcoin, Database } from 'lucide-react';
 import { useAppDispatch } from '@/store';
@@ -59,11 +58,9 @@ export function AddWidgetModal({ open, onOpenChange }: AddWidgetModalProps) {
     const widgetType = widgetTypes.find(type => type.type === selectedType);
     if (!widgetType) return;
 
-    // Find available position for new widget
     const x = 0;
     const y = 0;
 
-    // Set up default configuration based on widget type
     const defaultConfig: WidgetConfig = {
       apiSource: selectedType === 'stock-table' ? 'indianapi' : 
                  selectedType === 'crypto-table' ? 'coinbase' : 'custom',
@@ -92,7 +89,6 @@ export function AddWidgetModal({ open, onOpenChange }: AddWidgetModalProps) {
 
     dispatch(addWidget(newWidget));
     
-    // Reset form
     setSelectedType(null);
     setTitle('');
     setCustomUrl('');

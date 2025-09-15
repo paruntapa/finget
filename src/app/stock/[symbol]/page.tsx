@@ -34,13 +34,11 @@ export default function StockPage() {
   const [selectedTimeFrame, setSelectedTimeFrame] = useState<TimeFrame>('daily');
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
 
-  // Fetch stock price for current info
   const { data: stockData } = useGetStockPriceQuery(
     { symbol: symbol || '' }, 
     { skip: !symbol, pollingInterval: 10000 }
   );
 
-  // Fetch data based on timeframe
   const { 
     data: dailyData, 
     error: dailyError, 
@@ -71,7 +69,6 @@ export default function StockPage() {
     { skip: selectedTimeFrame !== 'monthly', pollingInterval: 10000 }
   );
 
-  // Determine current data and loading state
   const currentData = selectedTimeFrame === 'daily' ? dailyData : 
                      selectedTimeFrame === 'weekly' ? weeklyData : monthlyData;
   const currentError = selectedTimeFrame === 'daily' ? dailyError : 
@@ -79,13 +76,12 @@ export default function StockPage() {
   const isLoading = selectedTimeFrame === 'daily' ? dailyLoading : 
                    selectedTimeFrame === 'weekly' ? weeklyLoading : monthlyLoading;
 
-  // Auto refresh every 10 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       if (selectedTimeFrame === 'daily') refetchDaily();
       else if (selectedTimeFrame === 'weekly') refetchWeekly();
       else refetchMonthly();
-    }, 10000); // 10 seconds
+    }, 10000); 
 
     setRefreshInterval(interval);
 
@@ -94,7 +90,6 @@ export default function StockPage() {
     };
   }, [selectedTimeFrame, refetchDaily, refetchWeekly, refetchMonthly]);
 
-  // Cleanup interval on unmount
   useEffect(() => {
     return () => {
       if (refreshInterval) {
@@ -103,8 +98,6 @@ export default function StockPage() {
     };
   }, [refreshInterval]);
 
-  // Process chart data
-  // Parse chart data from IndianAPI response
   const chartData = React.useMemo(() => {
     if (!currentData?.candleData) return [];
     
@@ -115,8 +108,6 @@ export default function StockPage() {
       return [];
     }
   }, [currentData]);
-
-  console.log(currentData, "currentData")
 
   // Mock data for when API is not available
   const mockChartData = React.useMemo(() => {

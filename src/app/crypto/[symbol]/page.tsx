@@ -34,16 +34,13 @@ export default function CryptoPage() {
   
   const [selectedTimeFrame, setSelectedTimeFrame] = useState<TimeFrame>('1h');
 
-  // Fetch current crypto price for info display
   const { data: sparkLinesData } = useGetSparkLinesQuery(
     undefined, 
     { pollingInterval: 10000 }
   );
 
-  // Get current crypto data
   const currentCryptoData = sparkLinesData?.find(quote => quote.symbol === symbol);
 
-  // Fetch historical data based on timeframe
   const { data: data1m, error: error1m, isLoading: loading1m, refetch: refetch1m } = useGet1MinCandlesQuery(
     { symbol },
     { skip: selectedTimeFrame !== '1m', pollingInterval: 10000 }
@@ -65,7 +62,6 @@ export default function CryptoPage() {
     { skip: selectedTimeFrame !== '1d', pollingInterval: 10000 }
   );
 
-  // Determine current data and loading state
   const currentData = selectedTimeFrame === '1m' ? data1m : 
                      selectedTimeFrame === '5m' ? data5m :
                      selectedTimeFrame === '15m' ? data15m :
@@ -79,7 +75,6 @@ export default function CryptoPage() {
                    selectedTimeFrame === '15m' ? loading15m :
                    selectedTimeFrame === '1h' ? loading1h : loading1d;
 
-  // Parse chart data from Coinbase response
   const chartData = React.useMemo(() => {
     if (!currentData?.candleData) {
       console.log('No candle data found in:', currentData);

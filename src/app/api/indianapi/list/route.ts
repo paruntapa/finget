@@ -37,12 +37,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Build IndianAPI URL for list endpoint
     const url = new URL(`${INDIAN_API_BASE_URL}/list`);
 
     console.log(`Fetching from IndianAPI: ${url.toString()}`);
 
-    // Fetch from IndianAPI with API key in headers
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
@@ -50,7 +48,7 @@ export async function GET(request: NextRequest) {
         'User-Agent': 'FinGet-Dashboard/1.0',
         'X-Api-Key': apiKey,
       },
-      signal: AbortSignal.timeout(10000), // 10 second timeout
+      signal: AbortSignal.timeout(10000), 
     });
 
     if (!response.ok) {
@@ -59,7 +57,6 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
-    // Check for IndianAPI specific errors
     if (data.error || data.Error) {
       return NextResponse.json({
         error: 'IndianAPI Error',
@@ -68,13 +65,12 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Success response with cache headers
     const responseHeaders = new Headers({
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET',
       'Access-Control-Allow-Headers': 'Content-Type',
-      'Cache-Control': 'public, max-age=300, stale-while-revalidate=600', // 5 min cache, 10 min stale
+      'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',
     });
     
     return NextResponse.json(data, { headers: responseHeaders });

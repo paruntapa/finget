@@ -6,7 +6,6 @@ const COINBASE_API_BASE_URL = 'https://api.exchange.coinbase.com';
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   
-  // Get required symbol parameter
   const symbol = searchParams.get('symbol');
   if (!symbol) {
     return NextResponse.json({ 
@@ -38,11 +37,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Candles endpoint: /products/{symbol}/candles
     const coinbaseUrl = `${COINBASE_API_BASE_URL}/products/${symbol}/candles`;
     
-    // Add query parameters for candles
-    const granularity = searchParams.get('granularity') || '3600'; // Default 1 hour
+    const granularity = searchParams.get('granularity') || '3600'; 
     const start = searchParams.get('start');
     const end = searchParams.get('end');
     
@@ -54,7 +51,6 @@ export async function GET(request: NextRequest) {
     
     console.log(`Fetching from Coinbase: ${fullUrl}`);
 
-    // Fetch from Coinbase API
     const response = await fetch(fullUrl, {
       method: 'GET',
       headers: {
@@ -62,7 +58,7 @@ export async function GET(request: NextRequest) {
         'Content-Type': 'application/json',
         'User-Agent': 'FinGet-Dashboard/1.0',
       },
-      signal: AbortSignal.timeout(15000), // 15 second timeout
+      signal: AbortSignal.timeout(15000),
     });
 
     if (!response.ok) {
@@ -71,7 +67,6 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
-    // Check for Coinbase specific errors
     if (data.message) {
       return NextResponse.json({
         error: 'Coinbase API Error',
@@ -80,13 +75,12 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Success response with cache headers
     const responseHeaders = new Headers({
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET',
       'Access-Control-Allow-Headers': 'Content-Type',
-      'Cache-Control': 'public, max-age=60, stale-while-revalidate=120', // 1 min cache
+      'Cache-Control': 'public, max-age=60, stale-while-revalidate=120', 
     });
     
     return NextResponse.json(data, { headers: responseHeaders });
