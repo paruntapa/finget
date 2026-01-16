@@ -106,12 +106,9 @@ export function CandleChart({ data, height = 400, className = '' }: CandleChartP
       console.log('Chart data received:', data.slice(0, 3)); 
       
       const formattedData = data.map(item => {
-        let timeValue;
-        
-        timeValue = item.time;
         
         return {
-          time: timeValue as Time,
+          time: item.time as Time,
           open: item.open,
           high: item.high,
           low: item.low,
