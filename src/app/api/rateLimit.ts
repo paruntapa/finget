@@ -7,8 +7,8 @@ interface RateLimitEntry {
 }
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
-const WINDOW_SIZE = 60 * 1000; // 1 minute
-const MAX_REQUESTS = 60; // requests per minute
+const WINDOW_SIZE = 60 * 1000;
+const MAX_REQUESTS = 60;
 
 export function rateLimitMiddleware(identifier: string) {
   const now = Date.now();

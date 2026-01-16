@@ -75,8 +75,6 @@ export function CustomTable({ widget }: CustomTableProps) {
     );
   }, [tableData.rows, searchTerm]);
 
-  // No pagination needed with scrolling - show all filtered data
-
   const handleRefresh = async () => {
     await refetch();
   };
